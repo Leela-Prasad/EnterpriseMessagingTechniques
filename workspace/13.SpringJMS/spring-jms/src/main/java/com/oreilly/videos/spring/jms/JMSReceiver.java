@@ -18,7 +18,7 @@ public class JMSReceiver {
     @Autowired
     private JmsTemplate jmsTemplate;
 
-    @JmsListener(destination = "EM_TRADE.Q", selector = "TraderName = 'Mark'")
+    @JmsListener(destination = "EM_TRADE.Q", selector = "TraderName = 'Mark'", concurrency = "20-20")
     public void placeTrade(@Payload String trade, @Headers MessageHeaders headers, Message message) throws JMSException {
        // System.out.println("Processing Trade: " + trade + ", Trader = " + headers.get("TraderName"));
         System.out.println("Processing Trade: " + ((TextMessage)message).getText() + ", Trader = " + message.getStringProperty("TraderName"));
