@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+	<jms:config name="JMS_Receiver_Config" doc:name="JMS Config" doc:id="abfe09b1-5eae-40e3-a748-83aba3ca7b13" >
+		<jms:active-mq-connection >
+			<jms:factory-configuration brokerUrl="tcp://0.0.0.0:61616" />
+		</jms:active-mq-connection>
+	</jms:config>
+	<flow name="JmsReceiverFlow" doc:id="0ff13524-4403-460e-9f39-dabdbcbb2658" >
+		<http:listener doc:name="Listener" doc:id="a4ce9ae4-631d-4478-afda-4a606b370284" config-ref="HTTP_Listener_config" path="/receiver"/>
+		<jms:consume doc:name="Consume" doc:id="86291b6f-c762-45dd-91dd-05d7c47b5e32" config-ref="JMS_Receiver_Config" destination="TRADE.Q" ackMode="IMMEDIATE">
+			<jms:consumer-type >
+				<jms:queue-consumer />
+			</jms:consumer-type>
+		</jms:consume>
+		<set-payload value='#[%dw 2.0
+output application/java
+---
+payload  ++ ", TraderName = " ++ (attributes.properties.userProperties.TraderName default "") as String]' doc:name="Set Payload" doc:id="4901dd8f-e1a2-45fc-8e19-9b13a6a9bc2c" />
+	</flow>
+</mule>

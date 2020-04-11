@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="a746d4f0-cca0-4055-b1a6-7ee9f0164d2f" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<jms:config name="JMS_Config" doc:name="JMS Config" doc:id="59e138ab-8083-4fa4-ba36-c4bda832d43f" >
+		<jms:active-mq-connection >
+			<jms:factory-configuration brokerUrl="tcp://0.0.0.0:61616" />
+		</jms:active-mq-connection>
+		<jms:producer-config persistentDelivery="true" />
+	</jms:config>
+	<flow name="JmsSenderFlow" doc:id="ec6b3b55-fa11-406b-b095-c1a9d77cf669" >
+		<http:listener doc:name="Listener" doc:id="609d1638-09ae-424f-87a8-0d3b6e365f6c" config-ref="HTTP_Listener_config" path="/sender"/>
+		<jms:publish doc:name="Publish" doc:id="a5c5ce37-6763-4e79-9cba-f52d3ba8ee3f" config-ref="JMS_Config" destination="TRADE.Q">
+			<jms:message >
+				<jms:body ><![CDATA[#["Buy APPL 2000 Shares"]]]></jms:body>
+			</jms:message>
+		</jms:publish>
+	</flow>
+</mule>

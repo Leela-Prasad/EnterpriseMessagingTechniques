@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:file="http://www.mulesoft.org/schema/mule/file"
+      xmlns:spring="http://www.springframework.org/schema/beans"
+      xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+      xmlns:test="http://www.mulesoft.org/schema/mule/test" 
+      xmlns:script="http://www.mulesoft.org/schema/mule/scripting"
+      xsi:schemaLocation="
+          http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/3.2/mule.xsd
+          http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/3.2/mule-file.xsd
+          http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+          http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/3.2/mule-jms.xsd
+    	  http://www.mulesoft.org/schema/mule/test http://www.mulesoft.org/schema/mule/test/3.2/mule-test.xsd
+    	  http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/3.2/mule-scripting.xsd 
+    	">
+    	
+    <beans xmlns="http://www.springframework.org/schema/beans">
+	 	<!-- Redelivery Policy -->
+ 		<bean id="redeliveryPolicy" class="org.apache.activemq.RedeliveryPolicy">
+			<property name="initialRedeliveryDelay" value="1000"/>
+			<property name="redeliveryDelay" value="1000"/>
+			<property name="useExponentialBackOff" value="false"/>
+			<property name="backOffMultiplier" value="2"/>
+		</bean>
+		 
+		<!-- ActiveMQ Connection factory -->
+		<bean id="amqFactory" class="org.apache.activemq.ActiveMQConnectionFactory" lazy-init="true">
+			<property name="brokerURL" value="vm://localhost:61616" />
+			<property name="redeliveryPolicy" ref="redeliveryPolicy">
+			</property>
+		</bean>
+	</beans>
+
+	<jms:activemq-connector name="amqConnector"
+							maxRedelivery="2" 
+							connectionFactory-ref="amqFactory" 
+							persistentDelivery="false"
+							specification="1.1" >
+		<service-overrides sessionHandler="org.mule.session.NullSessionHandler"/>
+	</jms:activemq-connector>
+	
+	<file:connector name="input" pollingFrequency="100" 
+					moveToDirectory="/tmp/carorders/processed" 
+					moveToPattern="#[header:originalFilename]"/>
+	
+	
+	<flow name="messageGroupsProducer">
+		<file:inbound-endpoint connector-ref="input" path="/tmp/carorders"  />
+		<object-to-string-transformer/>
+		<splitter evaluator="xpath" expression="/orders/order"/>
+		<jms:outbound-endpoint queue="orders.car" connector-ref="amqConnector">
+	   		<message-properties-transformer scope="outbound">
+	    		<add-message-property key="JMSXGroupID" value="#[xpath://type]"/>
+			</message-properties-transformer>
+			<expression-transformer>
+				<return-argument evaluator="xpath" expression="//description"/>
+			</expression-transformer>
+	   	</jms:outbound-endpoint>
+	</flow>
+	
+	<flow name="messageGroupsConsumer">
+		<jms:inbound-endpoint queue="orders.car">
+        	<jms:transaction action="ALWAYS_BEGIN" />
+    	</jms:inbound-endpoint>
+		<choice>
+			<when evaluator="groovy" expression="payload == 'Volvo V70'">
+				<echo-component />
+				<test:component throwException="true"/>
+			</when>
+			<otherwise>
+				<echo-component />
+			</otherwise>
+		</choice>
+		<default-exception-strategy>
+			<commit-transaction exception-pattern="org.mule.transport.jms.redelivery.MessageRedeliveredException"/>
+		</default-exception-strategy>
+	</flow>
+</mule>

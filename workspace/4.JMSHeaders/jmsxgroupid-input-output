@@ -1,0 +1,40 @@
+Article Link: https://dzone.com/articles/message-sequencing-mule-and
+
+Input:
+<?xml version='1.0' encoding='UTF-8'?>
+<orders>
+	<order>
+		<type>Volvo</type>
+		<description>Volvo V70</description>
+	</order>
+	<order>
+		<type>Volvo</type>
+		<description>Volvo C30</description>
+	</order>
+	<order>
+		<type>Saab</type>
+		<description>Saab 9-5</description>
+	</order>
+</orders>
+
+
+Output:
+********************************************************************************
+* Message received in service: messageGroupsConsumer. Content is: 'Volvo V70'  *
+********************************************************************************
+
+********************************************************************************
+* Message received in service: messageGroupsConsumer. Content is: 'Saab 9-5'   *
+********************************************************************************
+
+********************************************************************************
+* Message received in service: messageGroupsConsumer. Content is: 'Volvo V70'  *
+********************************************************************************
+
+********************************************************************************
+* Message received in service: messageGroupsConsumer. Content is: 'Volvo V70'  *
+********************************************************************************
+
+********************************************************************************
+* Message received in service: messageGroupsConsumer. Content is: 'Volvo C30'  *
+********************************************************************************
